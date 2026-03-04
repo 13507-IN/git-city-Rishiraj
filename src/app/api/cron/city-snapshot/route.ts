@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 
 const STORAGE_BUCKET = "city-data";
 const STORAGE_PATH = "snapshot.json";
-const PAGE_SIZE = 5000;
+const PAGE_SIZE = 1000; // Supabase PostgREST caps at 1000 rows per request
 
 /** Paginate through all rows of a table. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
