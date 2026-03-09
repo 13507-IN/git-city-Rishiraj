@@ -1601,7 +1601,7 @@ function HomeContent() {
       let updatedBuildings: CityBuilding[] | null = null;
       const refreshedLogin = (devData.github_login ?? trimmed).toLowerCase();
       const existingDev = rawDevsRef.current.find(
-        (d: Record<string, unknown>) => (d.github_login as string)?.toLowerCase() === refreshedLogin
+        (d) => d.github_login?.toLowerCase() === refreshedLogin
       );
       const syncedDev = {
         ...(existingDev ?? {}),
