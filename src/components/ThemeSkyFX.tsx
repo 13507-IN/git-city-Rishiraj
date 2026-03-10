@@ -399,68 +399,6 @@ function makeSunsetCirrusDomeTexture(seed = 1, w = 1024, h = 512): THREE.CanvasT
     return tex;
 }
 
-/** Thin cirrus streak texture — wispy strokes, seamless on X, fades top/bottom. */
-function makeCirrusTexture(seed = 1, w = 1024, h = 256): THREE.CanvasTexture {
-    const rng = mulberry32(seed);
-    const c = document.createElement("canvas");
-    c.width = w; c.height = h;
-    const ctx = c.getContext("2d")!;
-    ctx.clearRect(0, 0, w, h);
-
-    ctx.globalCompositeOperation = "lighter";
-    ctx.lineCap = "round";
-
-    const streaks = 70;
-    for (let i = 0; i < streaks; i++) {
-        const y = (0.25 + rng() * 0.45) * h;
-        const len = (0.35 + rng() * 0.65) * w;
-        const x0 = rng() * w;
-        const x1 = x0 + len;
-        const amp = 8 + rng() * 24;
-        const lw = 1 + rng() * 5;
-        ctx.strokeStyle = `rgba(255,255,255,${0.03 + rng() * 0.06})`;
-        ctx.lineWidth = lw;
-
-        const draw = (dx: number) => {
-            ctx.beginPath();
-            ctx.moveTo(x0 + dx, y);
-            ctx.quadraticCurveTo(x0 + dx + len * 0.35, y - amp, x0 + dx + len * 0.70, y + amp * 0.6);
-            ctx.quadraticCurveTo(x0 + dx + len * 0.85, y + amp, x1 + dx, y + amp * 0.2);
-            ctx.stroke();
-        };
-        draw(0);
-        draw(-w); // wrap left
-        draw(+w); // wrap right
-    }
-
-    // Soft blur pass (reduces harsh stroke lines)
-    const tmp = document.createElement("canvas");
-    tmp.width = w; tmp.height = h;
-    const tctx = tmp.getContext("2d")!;
-    tctx.filter = "blur(2px)";
-    tctx.drawImage(c, 0, 0);
-    ctx.clearRect(0, 0, w, h);
-    ctx.drawImage(tmp, 0, 0);
-
-    // Vertical fade so sprite edges don't look rectangular
-    ctx.globalCompositeOperation = "destination-in";
-    const mask = ctx.createLinearGradient(0, 0, 0, h);
-    mask.addColorStop(0.00, "rgba(0,0,0,0)");
-    mask.addColorStop(0.20, "rgba(0,0,0,1)");
-    mask.addColorStop(0.80, "rgba(0,0,0,1)");
-    mask.addColorStop(1.00, "rgba(0,0,0,0)");
-    ctx.fillStyle = mask;
-    ctx.fillRect(0, 0, w, h);
-
-    const tex = new THREE.CanvasTexture(c);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    tex.minFilter = THREE.LinearFilter;
-    tex.magFilter = THREE.LinearFilter;
-    tex.wrapS = THREE.RepeatWrapping;
-    tex.wrapT = THREE.ClampToEdgeWrapping;
-    tex.repeat.set(1.6, 1);
-    return tex;
-}
 
 /** Patchy aurora curtain texture — two 1D noise layers create
  *  gaps where aurora fades out, giving a realistic non-uniform look.
@@ -674,6 +612,7 @@ export default memo(function ThemeSkyFX({ themeIndex, theme }: Props) {
         geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
         geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
         return geo;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- skyD depends on camera.far, intentionally omitted
     }, [themeIndex]);
 
     const starMat = useMemo(() => {
@@ -724,6 +663,7 @@ export default memo(function ThemeSkyFX({ themeIndex, theme }: Props) {
         geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
         geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
         return geo;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- skyD depends on camera.far, intentionally omitted
     }, [themeIndex]);
 
     const dustMat = useMemo(() => {
@@ -998,6 +938,7 @@ export default memo(function ThemeSkyFX({ themeIndex, theme }: Props) {
         if (flyPointsRef.current) flyPointsRef.current.rotation.y += dt * 0.010;
 
         // ── Aurora ring scroll + pulse (Emerald) ─────────────────
+        // eslint-disable-next-line react-compiler/react-compiler -- Three.js material mutation in animation loop
         if (themeIndex === 3 && auroraRingMat0 && auroraRingMat1) {
             // Slower drift — patchy texture already has visual complexity
             if (auroraRingMat0.map && auroraRingMat1.map) {
@@ -1027,6 +968,7 @@ export default memo(function ThemeSkyFX({ themeIndex, theme }: Props) {
         }
 
         // ── Sunset cirrus drift ───────────────────────────────────────
+        // eslint-disable-next-line react-compiler/react-compiler -- Three.js material mutation in animation loop
         if (themeIndex === 1 && sunsetCirrusMat?.map) {
             sunsetCirrusMat.map.offset.x = (sunsetCirrusMat.map.offset.x + dt * 0.0012) % 1;
         }
