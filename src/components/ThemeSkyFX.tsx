@@ -962,16 +962,16 @@ export default memo(function ThemeSkyFX({ themeIndex, theme }: Props) {
                     auroraPulse.current.t += dt;
                     const p01 = Math.min(1, auroraPulse.current.t / auroraPulse.current.dur);
                     const bump = Math.sin(p01 * Math.PI);
-                    m0.opacity = 0.22 + bump * 0.15;
-                    m1.opacity = 0.14 + bump * 0.11;
+                    auroraRingMat0.opacity = 0.22 + bump * 0.15;
+                    auroraRingMat1.opacity = 0.14 + bump * 0.11;
                     if (p01 >= 1) {
                         auroraPulse.current.active = false;
-                        m0.opacity = 0.22;
-                        m1.opacity = 0.14;
+                        auroraRingMat0.opacity = 0.22;
+                        auroraRingMat1.opacity = 0.14;
                     }
                 }
             }
-        }
+
 
         // ── Sunset cirrus drift ───────────────────────────────────────
         // eslint-disable-next-line react-compiler/react-compiler -- Three.js material mutation in animation loop
