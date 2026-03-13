@@ -6,6 +6,19 @@ function hashKey(key: string): string {
   return crypto.createHash("sha256").update(key).digest("hex");
 }
 
+// Debounce broadcasts: only send once per developer per 60s,
+// unless it's an offline signal (always broadcast immediately).
+const lastBroadcast = new Map<number, number>();
+const BROADCAST_DEBOUNCE_MS = 60_000;
+
+function shouldBroadcast(devId: number, isOffline: boolean): boolean {
+  if (isOffline) return true;
+  const last = lastBroadcast.get(devId) ?? 0;
+  if (Date.now() - last < BROADCAST_DEBOUNCE_MS) return false;
+  lastBroadcast.set(devId, Date.now());
+  return true;
+}
+
 // ── Validation ──────────────────────────────────────────────────────────────
 
 const MAX_STRING = 64;
@@ -156,13 +169,15 @@ export async function POST(request: NextRequest) {
   // Broadcast to realtime (no internal IDs exposed)
   if (heartbeats.length > 0) {
     const lastHb = heartbeats[heartbeats.length - 1];
-    const broadcastStatus = lastHb.status === "offline" ? "offline" : "active";
-    broadcastToChannel("coding-presence", "heartbeat", {
-      githubLogin: dev.github_login,
-      avatarUrl: dev.avatar_url,
-      status: broadcastStatus,
-      language: lastHb.language,
-    });
+    const isOffline = lastHb.status === "offline";
+    if (shouldBroadcast(dev.id, isOffline)) {
+      broadcastToChannel("coding-presence", "heartbeat", {
+        githubLogin: dev.github_login,
+        avatarUrl: dev.avatar_url,
+        status: isOffline ? "offline" : "active",
+        language: lastHb.language,
+      });
+    }
   }
 
   return NextResponse.json({ accepted, rejected });

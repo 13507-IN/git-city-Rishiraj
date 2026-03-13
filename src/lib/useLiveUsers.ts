@@ -1,46 +1,34 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { createBrowserSupabase } from "@/lib/supabase";
-import type { RealtimeChannel } from "@supabase/supabase-js";
-
-type Status = "connecting" | "connected" | "error";
+import { useState, useEffect } from "react";
 
 export function useLiveUsers() {
   const [count, setCount] = useState(1);
-  const [status, setStatus] = useState<Status>("connecting");
-  const channelRef = useRef<RealtimeChannel | null>(null);
 
   useEffect(() => {
-    const supabase = createBrowserSupabase();
-    const presenceKey = crypto.randomUUID();
+    let cancelled = false;
 
-    const channel = supabase.channel("city-presence", {
-      config: { presence: { key: presenceKey } },
-    });
-
-    channelRef.current = channel;
-
-    channel
-      .on("presence", { event: "sync" }, () => {
-        const state = channel.presenceState();
-        const total = Object.keys(state).length;
-        setCount(Math.max(1, total));
-        setStatus("connected");
-      })
-      .subscribe(async (status: string) => {
-        if (status === "SUBSCRIBED") {
-          await channel.track({ online_at: new Date().toISOString() });
-        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-          setStatus("error");
+    async function fetchCount() {
+      try {
+        const res = await fetch("/api/presence");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled && typeof data.count === "number") {
+          setCount(Math.max(1, data.count));
         }
-      });
+      } catch {
+        // ignore
+      }
+    }
+
+    fetchCount();
+    const interval = setInterval(fetchCount, 60_000);
 
     return () => {
-      channel.unsubscribe();
-      channelRef.current = null;
+      cancelled = true;
+      clearInterval(interval);
     };
   }, []);
 
-  return { count, status };
+  return { count, status: "connected" as const };
 }

@@ -1789,7 +1789,7 @@ function HomeContent() {
   }, [streakData?.xp, myBuilding]);
 
   // Live users presence
-  const { count: liveUsers, status: liveStatus } = useLiveUsers();
+  const { count: liveUsers } = useLiveUsers();
   const { liveCount: codingCount, liveByLogin } = useCodingPresence();
 
   // City energy: devs coding -> city lights up. 0 devs = nearly dark, 5+ = full brightness
@@ -2511,15 +2511,13 @@ function HomeContent() {
             {discordMembers != null && <span className="text-cream">{discordMembers.toLocaleString()}</span>}
           </a>
           {/* Live users — desktop only */}
-          {liveStatus !== "error" && (
-            <div className="hidden sm:flex items-center gap-1.5 border-[3px] border-border bg-bg/70 px-2.5 py-1 text-[10px] backdrop-blur-sm">
-              <span className="live-dot h-1.5 w-1.5 shrink-0 rounded-full bg-[#4ade80]" />
-              <span className="text-cream">{liveUsers.toLocaleString()}</span>
-              <span className="text-muted">live</span>
-            </div>
-          )}
+          <div className="hidden sm:flex items-center gap-1.5 border-[3px] border-border bg-bg/70 px-2.5 py-1 text-[10px] backdrop-blur-sm">
+            <span className="live-dot h-1.5 w-1.5 shrink-0 rounded-full bg-[#4ade80]" />
+            <span className="text-cream">{liveUsers.toLocaleString()}</span>
+            <span className="text-muted">live</span>
+          </div>
           {/* Coding now — mobile: compact pulse badge; desktop: dropdown button */}
-          {codingCount > 0 && liveStatus !== "error" && (
+          {codingCount > 0 && (
             <button
               onClick={() => setCodingInfoOpen(true)}
               className="flex items-center gap-1.5 border-[3px] border-border bg-bg/70 px-2.5 py-1 text-[10px] backdrop-blur-sm sm:hidden"
@@ -2939,13 +2937,11 @@ function HomeContent() {
                 <span className="text-cream">{starCount?.toLocaleString() ?? "..."}</span>
                 <span>stars</span>
               </div>
-              {liveStatus !== "error" && (
-                <div className="flex items-center gap-1.5 text-[10px] text-muted">
-                  <span className="live-dot h-1.5 w-1.5 rounded-full bg-[#4ade80]" />
-                  <span className="text-cream">{liveUsers.toLocaleString()}</span>
-                  <span>online now</span>
-                </div>
-              )}
+              <div className="flex items-center gap-1.5 text-[10px] text-muted">
+                <span className="live-dot h-1.5 w-1.5 rounded-full bg-[#4ade80]" />
+                <span className="text-cream">{liveUsers.toLocaleString()}</span>
+                <span>online now</span>
+              </div>
             </div>
           </div>
         </div>
