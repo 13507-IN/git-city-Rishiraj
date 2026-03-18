@@ -110,6 +110,7 @@ export default function ArcadePage() {
   const [status, setStatus] = useState<ConnectionStatus>("connecting");
   const [chatText, setChatText] = useState("");
   const [loading, setLoading] = useState(true);
+  const [needsAuth, setNeedsAuth] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [sitting, setSitting] = useState(false);
   const [nearSeat, setNearSeat] = useState(false);
@@ -297,7 +298,8 @@ export default function ArcadePage() {
       } = await supabase.auth.getSession();
 
       if (!session) {
-        router.push("/");
+        setNeedsAuth(true);
+        setLoading(false);
         return;
       }
 
@@ -644,7 +646,44 @@ export default function ArcadePage() {
       className="fixed inset-0 z-50 bg-[#0a0a1a] flex flex-col items-center justify-center"
       style={isMobile ? { touchAction: "none", overscrollBehavior: "none" } : undefined}
     >
-      {loading && (
+      {/* Auth required screen */}
+      {needsAuth && (
+        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-[#e8e4df]">
+          <div className="text-center">
+            <p className="text-[14px] font-bold tracking-widest text-[#5a5248] uppercase">
+              E.Arcade
+            </p>
+            <p className="mt-2 text-[10px] text-[#8a8278] tracking-wide">
+              Floor 0 — The Lobby
+            </p>
+            <div className="mt-6">
+              <button
+                onClick={async () => {
+                  const supabase = createBrowserSupabase();
+                  await supabase.auth.signInWithOAuth({
+                    provider: "github",
+                    options: { redirectTo: `${window.location.origin}/arcade` },
+                  });
+                }}
+                className="cursor-pointer rounded-[4px] px-6 py-2.5 text-[11px] font-bold tracking-widest uppercase transition-all hover:brightness-95"
+                style={{
+                  background: "linear-gradient(180deg, #3a3a3a 0%, #2a2a2a 100%)",
+                  color: "#e8e4df",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1)",
+                }}
+              >
+                Sign in with GitHub
+              </button>
+            </div>
+            <p className="mt-4 text-[9px] text-[#a09888]">
+              Sign in to enter the building.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Loading screen */}
+      {loading && !needsAuth && (
         <div className="absolute inset-0 z-[60] flex items-center justify-center bg-[#e8e4df]">
           <div className="text-center">
             <p className="text-[11px] font-bold tracking-widest text-gray-400 uppercase">
