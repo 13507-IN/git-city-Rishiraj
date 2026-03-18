@@ -518,6 +518,12 @@ export default function ArcadePage() {
           discoveriesRef.current = data.commands ?? [];
         })
         .catch(() => {});
+      // Scroll to bottom when mobile keyboard opens/closes
+      const onResize = () => {
+        setTimeout(() => terminalScrollRef.current?.scrollTo(0, terminalScrollRef.current.scrollHeight), 100);
+      };
+      window.visualViewport?.addEventListener("resize", onResize);
+      return () => window.visualViewport?.removeEventListener("resize", onResize);
     }
   }, [showTerminal]);
 
@@ -598,6 +604,8 @@ export default function ArcadePage() {
     }
     sendChat(text);
     setChatText("");
+    setChatOpen(false);
+    chatInputRef.current?.blur();
   };
 
   useEffect(() => {
@@ -822,12 +830,14 @@ export default function ArcadePage() {
       {/* Terminal overlay */}
       {showTerminal && (
         <div
-          className="absolute inset-0 z-[57] flex items-center justify-center bg-[#0a0a0a]/85"
+          className="absolute inset-0 z-[57] flex items-end sm:items-center justify-center bg-[#0a0a0a]/85"
           onClick={() => terminalInputRef.current?.focus()}
         >
           <div
-            className="w-full h-full sm:w-[600px] sm:h-[400px] sm:rounded-[6px] flex flex-col overflow-hidden"
+            className="w-full sm:w-[600px] sm:h-[400px] sm:rounded-[6px] flex flex-col overflow-hidden"
             style={{
+              maxHeight: "100dvh",
+              height: isMobile ? "100dvh" : undefined,
               background: "#0c0c0c",
               boxShadow: isMobile ? "none" : "0 0 60px rgba(200, 160, 60, 0.06), 0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(200,160,60,0.1)",
               border: isMobile ? "none" : "1px solid rgba(200,160,60,0.12)",

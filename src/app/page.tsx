@@ -2641,7 +2641,7 @@ function HomeContent() {
         <>
           {/* Boost + Slow — bottom left, retro style */}
           {!flyPaused && (
-            <div className="fixed z-50 flex gap-1.5" style={{ bottom: "max(24px, env(safe-area-inset-bottom, 24px))", left: "16px" }}>
+            <div className="fixed z-50 flex gap-1.5 select-none" style={{ bottom: "max(24px, env(safe-area-inset-bottom, 24px))", left: "16px", WebkitTouchCallout: "none" }}>
               <button
                 onTouchStart={(e) => { e.stopPropagation(); setFlyBrakeActive(true); }}
                 onTouchEnd={(e) => { e.stopPropagation(); setFlyBrakeActive(false); }}

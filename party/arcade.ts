@@ -150,10 +150,21 @@ export default class ArcadeServer implements Party.Server {
   readonly lastAvatar = new Map<string, number>();
   readonly chatHistory = new Map<string, { text: string; ts: number }[]>();
   readonly muteStates = new Map<string, MuteState>();
-  readonly occupiedSeats = new Set<string>(); // "x,y" keys of taken seats
-  readonly seatedAt = new Map<string, string>(); // userId → "x,y" seat key
+  readonly occupiedSeats = new Set<string>();
+  readonly seatedAt = new Map<string, string>();
 
   constructor(readonly room: Party.Room) {}
+
+  // Restore player state from storage after hibernation wake
+  async onStart() {
+    const stored = await this.room.storage.list<PlayerState>({ prefix: "player:" });
+    for (const [key, player] of stored) {
+      const userId = key.slice("player:".length);
+      this.players.set(userId, player);
+    }
+    // Rebuild occupied seats from stored players
+    // (seats are lost on hibernate but players sitting are still at seat coords)
+  }
 
   // ── Auth: verify Supabase JWT before allowing connection ────
   static async onBeforeConnect(
@@ -262,6 +273,7 @@ export default class ArcadeServer implements Party.Server {
 
     conn.setState({ userId });
     this.players.set(userId, player);
+    this.room.storage.put(`player:${userId}`, player);
 
     // Send full state to new player
     const syncMsg: ServerMsg = {
@@ -308,6 +320,7 @@ export default class ArcadeServer implements Party.Server {
       if (!isWalkable(nx, ny)) {
         // Turn to face the wall but don't move
         player.dir = dir;
+        this.room.storage.put(`player:${userId}`, player);
         const moveMsg: ServerMsg = {
           type: "move",
           id: userId,
@@ -322,6 +335,7 @@ export default class ArcadeServer implements Party.Server {
       player.x = nx;
       player.y = ny;
       player.dir = dir;
+      this.room.storage.put(`player:${userId}`, player);
 
       const moveMsg: ServerMsg = { type: "move", id: userId, x: nx, y: ny, dir };
       this.room.broadcast(JSON.stringify(moveMsg));
@@ -361,6 +375,7 @@ export default class ArcadeServer implements Party.Server {
       player.x = x;
       player.y = y;
       player.dir = dir;
+      this.room.storage.put(`player:${userId}`, player);
       const sitMsg: ServerMsg = { type: "sit", id: userId, x, y, dir };
       this.room.broadcast(JSON.stringify(sitMsg));
     }
@@ -389,6 +404,7 @@ export default class ArcadeServer implements Party.Server {
       const spriteId = msg.sprite_id;
       if (typeof spriteId !== "number" || !Number.isInteger(spriteId) || spriteId < 0 || spriteId > MAX_SPRITE_ID) return;
       player.sprite_id = spriteId;
+      this.room.storage.put(`player:${userId}`, player);
       const avatarMsg: ServerMsg = { type: "avatar", id: userId, sprite_id: spriteId };
       this.room.broadcast(JSON.stringify(avatarMsg));
     }
@@ -460,6 +476,7 @@ export default class ArcadeServer implements Party.Server {
     const state = conn.state as { userId?: string } | null;
     const userId = state?.userId ?? conn.id;
     this.players.delete(userId);
+    this.room.storage.delete(`player:${userId}`);
     this.lastMove.delete(userId);
     this.lastChat.delete(userId);
     this.lastSit.delete(userId);

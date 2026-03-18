@@ -22,6 +22,18 @@ export default function EArcadeCard({ onClose, onEnter, session, onSignIn }: EAr
   const [alreadyAnswered, setAlreadyAnswered] = useState<boolean | null>(null); // null = loading
   const [submitting, setSubmitting] = useState(false);
   const [xpEarned, setXpEarned] = useState(0);
+  const [onlineCount, setOnlineCount] = useState<number | null>(null);
+
+  // Fetch live player count from PartyKit
+  useEffect(() => {
+    const host = process.env.NEXT_PUBLIC_PARTYKIT_HOST;
+    if (!host) return;
+    const protocol = host.includes("localhost") ? "http" : "https";
+    fetch(`${protocol}://${host}/parties/main/lobby`)
+      .then((r) => r.json())
+      .then((d: { count?: number }) => setOnlineCount(d.count ?? 0))
+      .catch(() => {});
+  }, []);
 
   // Check if user already answered
   useEffect(() => {
@@ -126,73 +138,42 @@ export default function EArcadeCard({ onClose, onEnter, session, onSignIn }: EAr
             </div>
           )}
 
-          {/* ── Intro state ── */}
-          {step === 0 && alreadyAnswered === false && (
+          {/* ── Ready to enter state ── */}
+          {step === 0 && alreadyAnswered !== null && (
             <div className="px-4 py-3 space-y-3">
               <p className="text-[10px] text-muted leading-relaxed">
-                A shared space for developers. Play games, meet others, explore floors.
+                The only building in Git City you can walk into. Chat with other devs, sit at a terminal, discover what E. left behind.
               </p>
-
               <div className="flex items-center gap-1.5">
                 <div
                   className="h-1.5 w-1.5 rounded-full animate-pulse"
                   style={{ backgroundColor: ACCENT }}
                 />
-                <span className="text-[9px] text-muted">Coming soon</span>
+                <span className="text-[9px] text-muted">
+                  {onlineCount !== null && onlineCount > 0
+                    ? `${onlineCount} online now`
+                    : "Online now"}
+                </span>
               </div>
-
               <div className="mx-0 h-px bg-border" />
-
               {session ? (
                 <div className="space-y-2">
-                  <p className="text-[10px] text-cream">
-                    Help us decide what to build.
-                  </p>
-                  <p className="text-[9px] text-muted">
-                    {survey.questions.length} questions. Earn {survey.xpReward} XP.
-                  </p>
                   <button
-                    onClick={() => { trackEArcadeSurveyStarted(); setStep(1); }}
+                    onClick={onEnter}
                     className="w-full py-2 text-[10px] font-bold uppercase tracking-wider border-2 transition-all hover:brightness-125"
                     style={{ borderColor: ACCENT, color: ACCENT }}
                   >
-                    Start
+                    Enter
                   </button>
+                  {!alreadyAnswered && (
+                    <button
+                      onClick={() => { trackEArcadeSurveyStarted(); setStep(1); }}
+                      className="w-full py-1.5 text-[9px] text-muted uppercase tracking-wider transition-all hover:text-cream"
+                    >
+                      Take survey (+{survey.xpReward} XP)
+                    </button>
+                  )}
                 </div>
-              ) : (
-                <button
-                  onClick={onSignIn}
-                  className="w-full py-2 text-[10px] font-bold uppercase tracking-wider border-2 transition-all hover:brightness-125"
-                  style={{ borderColor: ACCENT, color: ACCENT }}
-                >
-                  Sign in to enter
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* ── Ready to enter state ── */}
-          {step === 0 && alreadyAnswered === true && (
-            <div className="px-4 py-3 space-y-3">
-              <p className="text-[10px] text-muted leading-relaxed">
-                A shared space for developers. Play games, meet others, explore floors.
-              </p>
-              <div className="flex items-center gap-1.5">
-                <div
-                  className="h-1.5 w-1.5 rounded-full animate-pulse"
-                  style={{ backgroundColor: ACCENT }}
-                />
-                <span className="text-[9px] text-muted">Online now</span>
-              </div>
-              <div className="mx-0 h-px bg-border" />
-              {session ? (
-                <button
-                  onClick={onEnter}
-                  className="w-full py-2 text-[10px] font-bold uppercase tracking-wider border-2 transition-all hover:brightness-125"
-                  style={{ borderColor: ACCENT, color: ACCENT }}
-                >
-                  Enter
-                </button>
               ) : (
                 <button
                   onClick={onSignIn}
