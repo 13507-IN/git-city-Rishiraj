@@ -77,7 +77,7 @@ const THEMES: CityTheme[] = [
       [0, "#000206"], [0.15, "#020814"], [0.30, "#061428"], [0.45, "#0c2040"],
       [0.55, "#102850"], [0.65, "#0c2040"], [0.80, "#061020"], [1, "#020608"],
     ],
-    fogColor: "#0a1428", fogNear: 400, fogFar: 2500,
+    fogColor: "#0a1428", fogNear: 400, fogFar: 3500,
     ambientColor: "#4060b0", ambientIntensity: 0.55,
     sunColor: "#7090d0", sunIntensity: 0.75, sunPos: [300, 120, -200],
     fillColor: "#304080", fillIntensity: 0.3, fillPos: [-200, 60, 200],
@@ -99,7 +99,7 @@ const THEMES: CityTheme[] = [
       [0.46, "#a05068"], [0.52, "#d07060"], [0.57, "#e89060"], [0.62, "#f0b070"],
       [0.68, "#f0c888"], [0.75, "#c08060"], [0.85, "#603030"], [1, "#180c10"],
     ],
-    fogColor: "#80405a", fogNear: 400, fogFar: 2500,
+    fogColor: "#80405a", fogNear: 400, fogFar: 3500,
     ambientColor: "#e0a080", ambientIntensity: 0.7,
     sunColor: "#f0b070", sunIntensity: 1.0, sunPos: [400, 120, -300],
     fillColor: "#6050a0", fillIntensity: 0.35, fillPos: [-200, 80, 200],
@@ -121,7 +121,7 @@ const THEMES: CityTheme[] = [
       [0.52, "#500860"], [0.60, "#380648"], [0.75, "#180230"], [0.90, "#0c0118"],
       [1, "#06000c"],
     ],
-    fogColor: "#1a0830", fogNear: 400, fogFar: 2500,
+    fogColor: "#1a0830", fogNear: 400, fogFar: 3500,
     ambientColor: "#8040c0", ambientIntensity: 0.6,
     sunColor: "#c050e0", sunIntensity: 0.85, sunPos: [300, 100, -200],
     fillColor: "#00c0d0", fillIntensity: 0.4, fillPos: [-250, 60, 200],
@@ -143,7 +143,7 @@ const THEMES: CityTheme[] = [
       [0.52, "#004828"], [0.60, "#003820"], [0.75, "#002014"], [0.90, "#001008"],
       [1, "#000604"],
     ],
-    fogColor: "#0a2014", fogNear: 400, fogFar: 2500,
+    fogColor: "#0a2014", fogNear: 400, fogFar: 3500,
     ambientColor: "#40a060", ambientIntensity: 0.55,
     sunColor: "#70d090", sunIntensity: 0.75, sunPos: [300, 100, -250],
     fillColor: "#20a080", fillIntensity: 0.35, fillPos: [-200, 60, 200],
@@ -217,37 +217,39 @@ useGLTF.preload("/models/paper-plane.glb");
 
 const INTRO_DURATION = 14; // seconds
 
-// Founder building sits at roughly (146, h, -66) in the first block.
-// Camera target: founder building top.
-const FOUNDER_X = 146;
-const FOUNDER_Z = -66;
-const TARGET_X = FOUNDER_X;
-const TARGET_Z = FOUNDER_Z;
-const TARGET_Y = 450;
+// E.Arcade landmark sits at (173, 0, -149), height ~540.
+// Camera target: E.Arcade mid-height.
+const EARCADE_X = 173;
+const EARCADE_Z = -149;
+const TARGET_X = EARCADE_X;
+const TARGET_Z = EARCADE_Z;
+const TARGET_Y = 270;
 
-// Arc sweep: camera arcs ~180° around the city
-// Far left in fog -> descends through buildings -> rises to wide panorama centered on founder
+// Mirror of original arc but from -Z side (front of city).
+// X is negated so screen-left→right matches the original.
+// Starts far-left (X+), sweeps right (X-), ends at orbit.
+const EARCADE_TOP_Y = 540;
 const INTRO_WAYPOINTS: [number, number, number][] = [
-  [-1600, 800, 1800],   // WP0: Far, high, left - city hidden in fog
-  [-1000, 700, 1300],   // WP1: Descending, silhouette appears
-  [-600, 600, 900],    // WP2: Ad plane level, buildings becoming clear
-  [-200, 550, 650],    // WP3: Skirting the city edge
-  [200, 600, 600],    // WP4: Crossing over
-  [500, 700, 700],    // WP5: Rising, pulling back
-  [700, 800, 900],    // WP6: Dramatic pullback
-  [800, 850, 1000],   // WP7: Final orbit position (wide panorama)
+  [1600, 650, -1800],   // WP0: Far, screen-left - in fog
+  [1000, 640, -1300],   // WP1: Silhouette appears
+  [600, 630, -900],    // WP2: Buildings becoming clear
+  [200, 620, -700],    // WP3: Skirting the city edge
+  [-200, 620, -720],   // WP4: Crossing over (level)
+  [-500, 650, -780],   // WP5: Gently rising
+  [-700, 730, -900],   // WP6: Rising further
+  [-800, 850, -1000],   // WP7: Final orbit position (wide panorama)
 ];
 
-// Look targets smoothly converge toward the founder building top
+// Look targets: gradual convergence toward E.Arcade rooftop (no sudden jumps)
 const INTRO_LOOK_TARGETS: [number, number, number][] = [
-  [100, 300, -200],      // WP0: Toward distant city, already high
-  [TARGET_X, 380, TARGET_Z],  // WP1: Rising toward founder top
-  [TARGET_X, TARGET_Y, TARGET_Z],  // WP2: Locking on
-  [TARGET_X, TARGET_Y, TARGET_Z],  // WP3: Holding
-  [TARGET_X, TARGET_Y, TARGET_Z],  // WP4: Holding
-  [TARGET_X, TARGET_Y, TARGET_Z],  // WP5: Holding
-  [TARGET_X, TARGET_Y, TARGET_Z],  // WP6: Holding
-  [TARGET_X, TARGET_Y, TARGET_Z],  // WP7: Final look target
+  [50, 350, -50],           // WP0: Toward city center
+  [EARCADE_X * 0.4, 380, EARCADE_Z * 0.2], // WP1: Easing toward E.Arcade
+  [EARCADE_X * 0.6, 410, EARCADE_Z * 0.4], // WP2: Converging
+  [EARCADE_X * 0.8, 450, EARCADE_Z * 0.7], // WP3: Getting closer
+  [EARCADE_X, 500, EARCADE_Z],       // WP4: Almost there
+  [EARCADE_X, EARCADE_TOP_Y, EARCADE_Z],  // WP5: Locking on rooftop
+  [EARCADE_X, EARCADE_TOP_Y, EARCADE_Z],  // WP6: Holding
+  [EARCADE_X, 450, EARCADE_Z],       // WP7: Gently easing down to orbit height
 ];
 
 // Smootherstep (Perlin): zero velocity AND zero acceleration at both ends
@@ -368,7 +370,7 @@ function RabbitFlyover({
   );
 
   useEffect(() => {
-    camera.position.set(800, 700, 1000);
+    camera.position.set(-800, 700, -1000);
     camera.lookAt(0, 200, 0);
   }, [camera]);
 
@@ -1290,7 +1292,7 @@ function SkyCollectibles({ playerPosRef, accentColor, onCollect, cityRadius }: {
 function CameraReset() {
   const { camera } = useThree();
   useEffect(() => {
-    camera.position.set(400, 450, 600);
+    camera.position.set(-400, 450, -600);
     camera.lookAt(0, 30, 0);
   }, [camera]);
   return null;
@@ -2005,9 +2007,9 @@ function OrbitScene({ buildings, focusedBuilding, focusedBuildingB, focusPositio
   const controlsRef = useRef<any>(null);
   const { camera } = useThree();
 
-  // Reset camera on mount — wide panorama centered on founder area
+  // Reset camera on mount — wide panorama from front, E.Arcade centered
   useEffect(() => {
-    camera.position.set(800, 700, 1000);
+    camera.position.set(-800, 700, -1000);
     camera.lookAt(TARGET_X, TARGET_Y, TARGET_Z);
   }, [camera]);
 
@@ -2036,7 +2038,7 @@ function WallpaperOrbitScene({ speed }: { speed: number }) {
   const { camera } = useThree();
 
   useEffect(() => {
-    camera.position.set(800, 700, 1000);
+    camera.position.set(-800, 700, -1000);
     camera.lookAt(TARGET_X, TARGET_Y, TARGET_Z);
   }, [camera]);
 
@@ -2156,7 +2158,7 @@ export default function CityCanvas({ buildings, plazas, decorations, river, brid
 
   return (
     <Canvas
-      camera={{ position: [400, 450, 600], fov: 55, near: 0.5, far: 4000 }}
+      camera={{ position: [-400, 450, -600], fov: 55, near: 0.5, far: 4000 }}
       dpr={dpr}
       gl={{ antialias: false, powerPreference: "high-performance", toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.3 }}
       style={{ position: "fixed", inset: 0, width: "100vw", height: "100vh" }}
