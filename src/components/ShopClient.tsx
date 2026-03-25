@@ -1020,7 +1020,6 @@ export default function ShopClient({
     async (itemId: string) => {
       if (buyingItem) return;
       setBuyingItem(itemId);
-      setBuyingProvider("stripe"); // reuse loading state
       setError(null);
 
       try {
@@ -1042,14 +1041,33 @@ export default function ShopClient({
           return;
         }
 
-        // Success: update balance and mark as owned
+        // Success: update balance, mark as owned, show toast
         setPxBalance(data.new_balance ?? 0);
         setOwned((prev) => prev.includes(itemId) ? prev : [...prev, itemId]);
+        setPurchaseToast(itemId);
+        setTimeout(() => setPurchaseToast(null), 5000);
+
+        // Auto-equip if item belongs to a zone and that zone is empty
+        for (const [zone, zoneItems] of Object.entries(ZONE_ITEMS)) {
+          if (zoneItems.includes(itemId)) {
+            const zoneKey = zone as keyof Loadout;
+            setLoadout((prev) => {
+              if (prev[zoneKey]) return prev;
+              return { ...prev, [zoneKey]: itemId };
+            });
+            setHasChanges(true);
+            break;
+          }
+        }
+
+        // Streak freeze: increment local count
+        if (itemId === "streak_freeze") {
+          setFreezeCount((prev) => Math.min(prev + 1, 2));
+        }
       } catch {
         setError("Network error. Try again.");
       } finally {
         setBuyingItem(null);
-        setBuyingProvider(null);
       }
     },
     [buyingItem]
@@ -1170,8 +1188,8 @@ export default function ShopClient({
         </div>
       )}
 
-      {/* Checkout loading overlay */}
-      {buyingItem && (
+      {/* Checkout loading overlay (only for legacy Stripe/PIX redirects, not PX spend) */}
+      {buyingItem && buyingProvider && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
           <div className="border-[3px] border-border bg-bg p-6 text-center">
             <div className="mb-3 text-2xl animate-pulse">{ITEM_EMOJIS[buyingItem] ?? "🛒"}</div>
